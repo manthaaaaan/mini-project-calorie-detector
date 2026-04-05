@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "175994448598",
+    "project_id": "calorie-ai-4c320",
+    "storage_bucket": "calorie-ai-4c320.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:175994448598:android:282fa9e32e63fc70d37777",
+        "android_client_info": {
+          "package_name": "com.calorieai.ncet"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "175994448598-581uthjassan80et1insgsgltpcgame6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.calorieai.ncet",
+            "certificate_hash": "220ec5bd4ad4fcaeebe0c0e0450632e52a5749e3"
+          }
+        },
+        {
+          "client_id": "175994448598-rkspnhmm5ln46p1bv8gann8bgu6jkmau.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhX5DecwQsyIMMX22-2UaJV6aHoR5KG0Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "175994448598-rkspnhmm5ln46p1bv8gann8bgu6jkmau.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

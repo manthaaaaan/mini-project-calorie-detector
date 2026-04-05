@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Confetti from "react-confetti";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 import {
   analyzeMeal,
@@ -12,6 +13,8 @@ import {
   updateMeal,
 } from "./api/client";
 
+const BACKEND = "https://mini-project-calorie-detector-production.up.railway.app";
+
 const isoToday = () => new Date().toISOString();
 
 const tabs = [
@@ -21,29 +24,23 @@ const tabs = [
   { key: "profile", label: "Profile" },
 ];
 
-// ── Dynamic message logic based on goal type ─────────────────────────────────
 function getGoalStatus(consumed, goal, goalType) {
   if (!consumed || !goal) return null;
-
   if (goalType === "cut") {
     if (consumed > goal * 1.05) return { type: "over",  message: "🍕 Oops! You over ate for your cut goal today." };
     if (consumed >= goal * 0.9) return { type: "hit",   message: "🎉 Yay! You nailed your cut goal today!" };
     return { type: "under", message: `🔥 ${goal - Math.round(consumed)} kcal left to hit your cut goal.` };
   }
-
   if (goalType === "bulk") {
     if (consumed >= goal)        return { type: "hit",   message: "💪 Yay! You hit your bulk goal today!" };
     if (consumed >= goal * 0.9)  return { type: "close", message: `📈 Almost there! ${goal - Math.round(consumed)} kcal more to bulk.` };
     return { type: "under", message: `🍗 Eat more! ${goal - Math.round(consumed)} kcal left for your bulk.` };
   }
-
-  // lean / default
   if (consumed > goal * 1.05)  return { type: "over",  message: "😬 You over ate today. Balance it tomorrow!" };
   if (consumed >= goal * 0.95) return { type: "hit",   message: "✨ Yay! You maintained your calories perfectly!" };
   return { type: "under", message: `⚡ ${goal - Math.round(consumed)} kcal remaining for today.` };
 }
 
-// ── Should confetti fire? ────────────────────────────────────────────────────
 function shouldCelebrate(consumed, goal, goalType) {
   if (!consumed || !goal) return false;
   if (goalType === "cut")  return consumed >= goal && consumed <= goal * 1.05;
@@ -53,24 +50,12 @@ function shouldCelebrate(consumed, goal, goalType) {
 
 function NavIcon({ name }) {
   const icons = {
-    home: (
-      <path d="M4 10.5L12 4l8 6.5V20h-5v-6h-6v6H4z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-    ),
-    scan: (
-      <path d="M7 4H4v3M17 4h3v3M7 20H4v-3M20 17v3h-3M8 12h8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    ),
-    history: (
-      <path d="M12 7v5l3 2M21 12a9 9 0 10-2.64 6.36" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    ),
-    profile: (
-      <path d="M12 12a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 0114 0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    ),
+    home: <path d="M4 10.5L12 4l8 6.5V20h-5v-6h-6v6H4z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />,
+    scan: <path d="M7 4H4v3M17 4h3v3M7 20H4v-3M20 17v3h-3M8 12h8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />,
+    history: <path d="M12 7v5l3 2M21 12a9 9 0 10-2.64 6.36" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />,
+    profile: <path d="M12 12a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 0114 0" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />,
   };
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      {icons[name]}
-    </svg>
-  );
+  return <svg viewBox="0 0 24 24" aria-hidden="true">{icons[name]}</svg>;
 }
 
 function CalorieRing({ consumed, goal, goalType }) {
@@ -78,13 +63,11 @@ function CalorieRing({ consumed, goal, goalType }) {
   const radius = 62;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (progress / 100) * circumference;
-
-  // ✅ Ring color changes based on goal type + over/under status
   const isOver = consumed > goal * 1.05;
   const ringColors =
-    goalType === "cut" && isOver ? ["#f472b6", "#ef4444"]  // red warning on cut overage
-    : goalType === "bulk"        ? ["#34d399", "#22d3ee"]  // green/cyan for bulk
-    :                              ["#8a7dff", "#43ddff"]; // default violet/cyan
+    goalType === "cut" && isOver ? ["#f472b6", "#ef4444"]
+    : goalType === "bulk"        ? ["#34d399", "#22d3ee"]
+    :                              ["#8a7dff", "#43ddff"];
 
   return (
     <div className="calorie-ring-wrap">
@@ -128,8 +111,8 @@ export default function App({ user, onSignOut }) {
   const [editDraft, setEditDraft] = useState(null);
   const [error, setError] = useState("");
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [weeklyData, setWeeklyData] = useState([]);
 
-  // ✅ goalType persisted in localStorage so it survives page refresh
   const [goalType, setGoalType] = useState(
     () => localStorage.getItem("goalType") || "lean"
   );
@@ -159,6 +142,17 @@ export default function App({ user, onSignOut }) {
         image_path: latest.image_path,
       });
     }
+
+    // Build weekly data — only today is real, rest are 0 placeholders
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const today = new Date();
+    const weekly = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() - (6 - i));
+      return { day: days[d.getDay()], calories: 0, isToday: i === 6 };
+    });
+    weekly[6].calories = dashboardData.consumed_calories;
+    setWeeklyData(weekly);
   };
 
   useEffect(() => {
@@ -173,7 +167,6 @@ export default function App({ user, onSignOut }) {
     })();
   }, []);
 
-  // ✅ Confetti now uses goalType-aware shouldCelebrate()
   useEffect(() => {
     if (!dashboard) return;
     const celebrate = shouldCelebrate(dashboard.consumed_calories, goal, goalType);
@@ -258,7 +251,6 @@ export default function App({ user, onSignOut }) {
 
   const renderHome = () => {
     const status = getGoalStatus(dashboard.consumed_calories, goal, goalType);
-
     const statusColors = {
       hit:   { bg: "rgba(52,211,153,0.1)",  border: "rgba(52,211,153,0.35)",  color: "#6ee7b7" },
       over:  { bg: "rgba(239,68,68,0.1)",   border: "rgba(239,68,68,0.35)",   color: "#fca5a5" },
@@ -271,10 +263,8 @@ export default function App({ user, onSignOut }) {
       <>
         <motion.section className="glass-card hero-card" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}>
           <h2>Today</h2>
-
           <CalorieRing consumed={dashboard.consumed_calories} goal={goal} goalType={goalType} />
 
-          {/* ✅ Dynamic status message below the ring */}
           {status && (
             <motion.div
               key={status.message}
@@ -282,33 +272,20 @@ export default function App({ user, onSignOut }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
               style={{
-                margin: "0 auto 14px",
-                padding: "9px 18px",
-                borderRadius: 999,
-                background: sc.bg,
-                border: `1px solid ${sc.border}`,
-                color: sc.color,
-                fontSize: "0.82rem",
-                fontWeight: 600,
-                textAlign: "center",
-                maxWidth: 290,
+                margin: "0 auto 14px", padding: "9px 18px", borderRadius: 999,
+                background: sc.bg, border: `1px solid ${sc.border}`, color: sc.color,
+                fontSize: "0.82rem", fontWeight: 600, textAlign: "center", maxWidth: 290,
               }}
             >
               {status.message}
             </motion.div>
           )}
 
-          {/* ✅ Goal mode badge */}
           <div style={{ marginBottom: 10, display: "flex", justifyContent: "center" }}>
             <span style={{
-              fontSize: "0.68rem",
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              padding: "3px 12px",
-              borderRadius: 999,
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.1em",
+              textTransform: "uppercase", padding: "3px 12px", borderRadius: 999,
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
               color: "rgba(255,255,255,0.38)",
             }}>
               {goalType === "cut" ? "✂️ Cut Mode" : goalType === "bulk" ? "💪 Bulk Mode" : "⚖️ Lean Mode"}
@@ -322,6 +299,7 @@ export default function App({ user, onSignOut }) {
           </div>
         </motion.section>
 
+        {/* Latest Scan */}
         <motion.section className="glass-card" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
           <div className="card-header-inline">
             <h3>Latest Scan</h3>
@@ -332,16 +310,9 @@ export default function App({ user, onSignOut }) {
               style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {latestDetection.image_path && (
                 <img
-                  src={`http://localhost:8000/uploads/${latestDetection.image_path.split(/[\\/]/).pop()}`}
+                  src={`${BACKEND}/uploads/${latestDetection.image_path.split(/[\\/]/).pop()}`}
                   alt={latestDetection.name}
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                    border: "2px solid rgba(138,125,255,0.4)",
-                    flexShrink: 0,
-                  }}
+                  style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(138,125,255,0.4)", flexShrink: 0 }}
                 />
               )}
               <div>
@@ -355,8 +326,48 @@ export default function App({ user, onSignOut }) {
               </div>
             </motion.div>
           ) : (
-            <p className="muted">No scan yet today.</p>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: "center", padding: "20px 0" }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>📸</div>
+              <p className="muted" style={{ margin: 0 }}>No scan yet today.</p>
+              <button className="mini-btn" style={{ marginTop: 12 }} onClick={() => setActiveTab("scan")}>Scan Food</button>
+            </motion.div>
           )}
+        </motion.section>
+
+        {/* Weekly Calories Chart */}
+        <motion.section className="glass-card" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <h3 style={{ marginBottom: 16 }}>This Week</h3>
+          <ResponsiveContainer width="100%" height={120}>
+            <BarChart data={weeklyData} barSize={28} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+              <XAxis
+                dataKey="day"
+                tick={{ fill: "rgba(255,255,255,0.35)", fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis hide />
+              <Tooltip
+                contentStyle={{
+                  background: "#1a1a2e",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  color: "#fff",
+                }}
+                labelStyle={{ color: "rgba(255,255,255,0.6)" }}
+                formatter={(v) => [`${Math.round(v)} kcal`, ""]}
+                cursor={{ fill: "rgba(255,255,255,0.04)" }}
+              />
+              <Bar dataKey="calories" radius={[6, 6, 0, 0]}>
+                {weeklyData.map((entry, i) => (
+                  <Cell key={i} fill={entry.isToday ? "#8a7dff" : "rgba(138,125,255,0.2)"} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", textAlign: "center", marginTop: 6 }}>
+            Today highlighted in purple
+          </p>
         </motion.section>
       </>
     );
@@ -368,17 +379,8 @@ export default function App({ user, onSignOut }) {
       <p className="muted">Tap the glowing button to capture or upload food.</p>
 
       <label className="camera-button-wrap">
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={(e) => handlePickFile(e.target.files?.[0])}
-        />
-        <motion.div
-          className="camera-button"
-          animate={{ scale: scanning ? [1, 1.06, 1] : 1 }}
-          transition={{ repeat: scanning ? Infinity : 0, duration: 1.1 }}
-        >
+        <input type="file" accept="image/*" capture="environment" onChange={(e) => handlePickFile(e.target.files?.[0])} />
+        <motion.div className="camera-button" animate={{ scale: scanning ? [1, 1.06, 1] : 1 }} transition={{ repeat: scanning ? Infinity : 0, duration: 1.1 }}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 8h4l1.5-2h5L16 8h4v11H4z" fill="none" stroke="currentColor" strokeWidth="1.8" />
             <circle cx="12" cy="13" r="3.4" fill="none" stroke="currentColor" strokeWidth="1.8" />
@@ -391,20 +393,14 @@ export default function App({ user, onSignOut }) {
         {previewUrl && (
           <motion.div
             className="scan-circle-wrap"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.35, type: "spring", stiffness: 200 }}
           >
             <div className="scan-circle-ring-area">
               <div className="scan-circle-img-wrap">
                 <img src={previewUrl} alt="Food preview" className="scan-circle-img" />
                 {scanning && (
-                  <motion.div
-                    className="scan-circle-overlay"
-                    animate={{ opacity: [0.5, 0.2, 0.5] }}
-                    transition={{ duration: 1.2, repeat: Infinity }}
-                  />
+                  <motion.div className="scan-circle-overlay" animate={{ opacity: [0.5, 0.2, 0.5] }} transition={{ duration: 1.2, repeat: Infinity }} />
                 )}
               </div>
               {scanning && (
@@ -464,10 +460,26 @@ export default function App({ user, onSignOut }) {
                 </div>
               </div>
             ) : (
-              <>
-                <div>
-                  <h4>{meal.name}</h4>
-                  <p>{Math.round(meal.calories)} kcal</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%" }}>
+                {meal.image_path ? (
+                  <img
+                    src={`${BACKEND}/uploads/${meal.image_path.split(/[\\/]/).pop()}`}
+                    alt={meal.name}
+                    style={{
+                      width: 48, height: 48, borderRadius: 12, objectFit: "cover", flexShrink: 0,
+                      border: "1px solid rgba(138,125,255,0.3)",
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 12, flexShrink: 0,
+                    background: "rgba(138,125,255,0.1)", border: "1px solid rgba(138,125,255,0.2)",
+                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
+                  }}>🍽️</div>
+                )}
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ margin: 0 }}>{meal.name}</h4>
+                  <p style={{ margin: 0 }}>{Math.round(meal.calories)} kcal</p>
                   <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>
                     {new Date(meal.created_at + "Z").toLocaleString("en-IN", {
                       day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata",
@@ -478,18 +490,43 @@ export default function App({ user, onSignOut }) {
                   <button className="mini-btn" onClick={() => startEdit(meal)}>Edit</button>
                   <button className="mini-btn danger" onClick={() => handleDeleteMeal(meal.id)}>Delete</button>
                 </div>
-              </>
+              </div>
             )}
           </motion.article>
         ))}
-        {!meals.length && <p className="muted">No meals yet.</p>}
+
+        {!meals.length && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            style={{ textAlign: "center", padding: "32px 16px" }}>
+            <div style={{ fontSize: 56, marginBottom: 12 }}>🍱</div>
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: 600, margin: 0 }}>No meals logged yet</p>
+            <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, marginTop: 6 }}>Scan your first meal to get started!</p>
+            <button className="mini-btn" style={{ marginTop: 16 }} onClick={() => setActiveTab("scan")}>Scan Now</button>
+          </motion.div>
+        )}
       </div>
     </motion.section>
   );
 
   const renderProfile = () => (
     <>
-      {/* Daily Goal — first */}
+      {/* Profile Header */}
+      <motion.section className="glass-card" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <img
+            src={user?.photoURL}
+            alt="Profile"
+            style={{ width: 54, height: 54, borderRadius: "50%", border: "2px solid rgba(138,125,255,0.5)", objectFit: "cover" }}
+          />
+          <div style={{ flex: 1 }}>
+            <h3 style={{ margin: 0, fontSize: 16 }}>{user?.displayName}</h3>
+            <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{user?.email}</p>
+          </div>
+          <button className="mini-btn danger" onClick={onSignOut}>Sign Out</button>
+        </div>
+      </motion.section>
+
+      {/* Daily Goal */}
       <motion.section className="glass-card" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}>
         <h2>Daily Goal</h2>
         <div className="goal-row">
@@ -498,10 +535,9 @@ export default function App({ user, onSignOut }) {
         </div>
       </motion.section>
 
-      {/* Calorie Calculator — second */}
+      {/* Calorie Calculator */}
       <motion.section className="glass-card" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
         <h2>Calorie Calculator</h2>
-
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ display: "flex", gap: 8 }}>
             <div style={{ flex: 1 }}>
@@ -554,9 +590,7 @@ export default function App({ user, onSignOut }) {
             </select>
           </div>
 
-          <button
-            className="mini-btn"
-            style={{ padding: "12px", fontSize: 14, width: "100%" }}
+          <button className="mini-btn" style={{ padding: "12px", fontSize: 14, width: "100%" }}
             onClick={() => {
               const age = Number(document.getElementById("calc-age").value);
               const gender = document.getElementById("calc-gender").value;
@@ -564,16 +598,12 @@ export default function App({ user, onSignOut }) {
               const weight = Number(document.getElementById("calc-weight").value);
               const activity = Number(document.getElementById("calc-activity").value);
               const selectedGoalType = document.getElementById("calc-goal").value;
-
               if (!age || !height || !weight) { alert("Please fill in all fields"); return; }
-
               let bmr = gender === "male"
                 ? 10 * weight + 6.25 * height - 5 * age + 5
                 : 10 * weight + 6.25 * height - 5 * age - 161;
-
               const tdee = Math.round(bmr * activity);
               const target = selectedGoalType === "cut" ? tdee - 500 : selectedGoalType === "bulk" ? tdee + 500 : tdee;
-
               document.getElementById("calc-result").style.display = "block";
               document.getElementById("calc-tdee").textContent = tdee;
               document.getElementById("calc-target").textContent = target;
@@ -584,10 +614,8 @@ export default function App({ user, onSignOut }) {
             Calculate
           </button>
 
-          <div
-            id="calc-result"
-            style={{ display: "none", background: "rgba(138,125,255,0.08)", border: "1px solid rgba(138,125,255,0.2)", borderRadius: 12, padding: 16, marginTop: 4 }}
-          >
+          <div id="calc-result"
+            style={{ display: "none", background: "rgba(138,125,255,0.08)", border: "1px solid rgba(138,125,255,0.2)", borderRadius: 12, padding: 16, marginTop: 4 }}>
             <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 8 }}>Your Results</p>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
               <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>Maintenance (TDEE)</span>
@@ -597,12 +625,9 @@ export default function App({ user, onSignOut }) {
               <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}><span id="calc-goal-label"></span></span>
               <span style={{ fontSize: 15, fontWeight: 800, color: "#8a7dff" }}><span id="calc-target"></span> kcal</span>
             </div>
-            <button
-              className="mini-btn"
-              style={{ width: "100%", padding: "10px", fontSize: 13 }}
+            <button className="mini-btn" style={{ width: "100%", padding: "10px", fontSize: 13 }}
               onClick={() => {
                 const target = Number(document.getElementById("calc-target").textContent);
-                // ✅ Save goalType to state + localStorage so home page uses it
                 const selectedGoalType = document.getElementById("calc-goal").value;
                 setGoalType(selectedGoalType);
                 localStorage.setItem("goalType", selectedGoalType);
@@ -623,7 +648,6 @@ export default function App({ user, onSignOut }) {
     <div className="mobile-app">
       {showConfetti && <Confetti recycle={false} numberOfPieces={250} gravity={0.17} />}
       <div className="bg-layer" />
-
       <main className="phone-shell">
         <motion.header className="app-head" initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
           <h1>CalorieAI</h1>

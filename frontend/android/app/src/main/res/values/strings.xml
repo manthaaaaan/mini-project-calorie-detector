@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CalorieAI</string>
+    <string name="title_activity_main">CalorieAI</string>
+    <string name="package_name">com.calorieai.ncet</string>
+    <string name="custom_url_scheme">com.calorieai.ncet</string>
+</resources>

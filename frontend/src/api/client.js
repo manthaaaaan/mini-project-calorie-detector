@@ -2,7 +2,7 @@ import axios from "axios";
 import { auth } from "../firebase";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 
-const BASE = import.meta.env.VITE_API_BASE_URL || "http://10.140.177.60:8000";
+const BASE = import.meta.env.VITE_API_BASE_URL || "https://mini-project-calorie-detector-production.up.railway.app";
 
 const api = axios.create({ baseURL: BASE });
 
