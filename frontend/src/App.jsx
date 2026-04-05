@@ -346,18 +346,18 @@ export default function App({ user, onSignOut }) {
                 tickLine={false}
               />
               <YAxis hide />
-              <Tooltip
-                contentStyle={{
-                  background: "#1a1a2e",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 8,
-                  fontSize: 12,
-                  color: "#fff",
-                }}
-                labelStyle={{ color: "rgba(255,255,255,0.6)" }}
-                formatter={(v) => [`${Math.round(v)} kcal`, ""]}
-                cursor={{ fill: "rgba(255,255,255,0.04)" }}
-              />
+             <Tooltip
+  contentStyle={{
+    background: "#1a1a2e",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: 8,
+    fontSize: 12,
+  }}
+  labelStyle={{ color: "rgba(255,255,255,0.6)" }}
+  itemStyle={{ color: "#8a7dff" }}
+  formatter={(v) => [`${Math.round(v)} kcal`, ""]}
+  cursor={{ fill: "rgba(255,255,255,0.04)" }}
+/>
               <Bar dataKey="calories" radius={[6, 6, 0, 0]}>
                 {weeklyData.map((entry, i) => (
                   <Cell key={i} fill={entry.isToday ? "#8a7dff" : "rgba(138,125,255,0.2)"} />
@@ -422,17 +422,28 @@ export default function App({ user, onSignOut }) {
         )}
       </AnimatePresence>
 
-      {latestDetection && (
-        <motion.div className="glass-inner" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <h4>{latestDetection.name}</h4>
-          <p className="detect-kcal">{Math.round(latestDetection.calories)} kcal</p>
-          <div className="macro-pill-row stacked">
-            <span className="pill protein">Protein {latestDetection.protein.toFixed(1)}g</span>
-            <span className="pill carbs">Carbs {latestDetection.carbs.toFixed(1)}g</span>
-            <span className="pill fats">Fats {latestDetection.fats.toFixed(1)}g</span>
-          </div>
-        </motion.div>
-      )}
+   {latestDetection && (
+  <motion.div className="glass-inner" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+    {latestDetection.image_path && (
+      <img
+        src={`${BACKEND}/uploads/${latestDetection.image_path.split(/[\\/]/).pop()}`}
+        alt={latestDetection.name}
+        style={{
+          width: "100%", height: 160, objectFit: "cover",
+          borderRadius: 12, marginBottom: 12,
+          border: "1px solid rgba(138,125,255,0.3)",
+        }}
+      />
+    )}
+    <h4>{latestDetection.name}</h4>
+    <p className="detect-kcal">{Math.round(latestDetection.calories)} kcal</p>
+    <div className="macro-pill-row stacked">
+      <span className="pill protein">Protein {latestDetection.protein.toFixed(1)}g</span>
+      <span className="pill carbs">Carbs {latestDetection.carbs.toFixed(1)}g</span>
+      <span className="pill fats">Fats {latestDetection.fats.toFixed(1)}g</span>
+    </div>
+  </motion.div>
+)}
     </motion.section>
   );
 
