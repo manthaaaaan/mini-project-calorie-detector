@@ -2,14 +2,13 @@ from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.crud import create_meal, delete_meal, get_meals_for_day, update_meal
 from app.database import get_db
 from app.firebase_auth import get_current_user
-from app.main import limiter
 from app.schemas import AIRecognizedFood, AnalyzeResponse, MealCreate, MealRead, MealUpdate
 from app.services.gemini_service import recognizer
 
@@ -17,9 +16,7 @@ router = APIRouter(prefix="/api/meals", tags=["meals"])
 
 
 @router.post("/analyze", response_model=AnalyzeResponse)
-@limiter.limit("10/minute")
 async def analyze_and_save_meal(
-    request: Request,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user),
@@ -39,6 +36,7 @@ async def analyze_and_save_meal(
     output_path = settings.uploads_dir / filename
     output_path.write_bytes(image_bytes)
 
+    # Only save the main dish (highest calories)
     main_detection = max(detections, key=lambda x: x["calories"])
 
     saved_meals = []
@@ -64,9 +62,7 @@ async def analyze_and_save_meal(
 
 
 @router.post("/manual", response_model=MealRead)
-@limiter.limit("30/minute")
 def add_manual_meal(
-    request: Request,
     payload: MealCreate,
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user),
@@ -75,9 +71,7 @@ def add_manual_meal(
 
 
 @router.get("", response_model=list[MealRead])
-@limiter.limit("60/minute")
 def list_meals(
-    request: Request,
     date: str | None = Query(default=None),
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user),
@@ -87,9 +81,7 @@ def list_meals(
 
 
 @router.put("/{meal_id}", response_model=MealRead)
-@limiter.limit("30/minute")
 def edit_meal(
-    request: Request,
     meal_id: int,
     payload: MealUpdate,
     db: Session = Depends(get_db),
@@ -102,9 +94,7 @@ def edit_meal(
 
 
 @router.delete("/{meal_id}")
-@limiter.limit("30/minute")
 def remove_meal(
-    request: Request,
     meal_id: int,
     db: Session = Depends(get_db),
     user_id: str = Depends(get_current_user),
