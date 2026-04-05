@@ -1,0 +1,774 @@
+@import url("https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap");
+
+/* ── TOKENS ──────────────────────────────────────────────── */
+:root {
+  --bg-0: #04030a;
+  --bg-1: #0c0918;
+  --bg-2: #110e22;
+
+  --surface-1: rgba(255, 255, 255, 0.045);
+  --surface-2: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.1);
+  --border-bright: rgba(255, 255, 255, 0.22);
+
+  --violet: #7c5cfc;
+  --violet-soft: #a78bfa;
+  --cyan: #22d3ee;
+  --pink: #f472b6;
+  --green: #34d399;
+
+  --protein: #60a5fa;
+  --carbs: #fb923c;
+  --fats: #fbbf24;
+
+  --text-1: #f8f5ff;
+  --text-2: #a09cbe;
+  --text-3: #5e5a7a;
+
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-xl: 36px;
+
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255,255,255,0.06) inset;
+  --shadow-glow-v: 0 0 40px rgba(124, 92, 252, 0.35);
+  --shadow-glow-c: 0 0 40px rgba(34, 211, 238, 0.3);
+
+  /* ✅ Bottom nav height token — used in padding-bottom too */
+  --nav-height: 72px;
+}
+
+/* ── RESET ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  /* ✅ dvh fills true visible area on mobile browsers */
+  height: 100dvh;
+}
+
+body {
+  height: 100dvh;
+  font-family: "DM Sans", sans-serif;
+  background: var(--bg-0);
+  color: var(--text-1);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: "Clash Display", sans-serif;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+/* ── BACKGROUND ──────────────────────────────────────────── */
+.mobile-app {
+  /* ✅ dvh instead of vh — fixes mobile browser address bar pushing nav off screen */
+  height: 100dvh;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 45% at 15% -5%, rgba(124, 92, 252, 0.28) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 85% 105%, rgba(34, 211, 238, 0.18) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 30% at 70% 30%, rgba(244, 114, 182, 0.1) 0%, transparent 60%);
+}
+
+.bg-layer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  opacity: 0.4;
+}
+
+/* ── PHONE SHELL ─────────────────────────────────────────── */
+.phone-shell {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 430px);
+  /* ✅ Full dynamic height so flex children fill correctly */
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  /* ✅ No padding-bottom here — content-stack handles it */
+  padding: 20px 16px 0;
+  overflow: hidden;
+}
+
+/* ── APP HEADER ──────────────────────────────────────────── */
+.app-head {
+  padding: 8px 0 4px;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.app-head h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  background: linear-gradient(120deg, #fff 30%, var(--violet-soft) 70%, var(--cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.app-head p {
+  font-size: 0.82rem;
+  color: var(--text-3);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* ── CONTENT STACK ───────────────────────────────────────── */
+.content-stack {
+  /* ✅ flex: 1 + overflow-y: auto = scrollable area between header and nav */
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  /* ✅ Enough bottom padding so last card clears the floating nav */
+  padding-bottom: calc(var(--nav-height) + 24px + env(safe-area-inset-bottom));
+  /* Hide scrollbar visually but keep it functional */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.content-stack::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── GLASS CARDS ─────────────────────────────────────────── */
+.glass-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.glass-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  pointer-events: none;
+}
+
+.glass-card h2 {
+  font-size: 1.15rem;
+  color: var(--text-1);
+  margin-bottom: 14px;
+}
+
+.glass-inner {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-top: 14px;
+  backdrop-filter: blur(12px);
+}
+
+/* ── HERO CARD ───────────────────────────────────────────── */
+.hero-card {
+  text-align: center;
+  background: linear-gradient(145deg, rgba(124, 92, 252, 0.12), rgba(34, 211, 238, 0.06));
+  border-color: rgba(124, 92, 252, 0.3);
+}
+
+/* ── CALORIE RING ────────────────────────────────────────── */
+.calorie-ring-wrap {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin: 4px auto 16px;
+}
+
+.calorie-ring {
+  transform: rotate(-90deg);
+  filter: drop-shadow(0 0 16px rgba(124, 92, 252, 0.6)) drop-shadow(0 0 32px rgba(34, 211, 238, 0.3));
+}
+
+.ring-track {
+  fill: transparent;
+  stroke: rgba(255, 255, 255, 0.07);
+  stroke-width: 10;
+}
+
+.ring-progress {
+  fill: transparent;
+  stroke: url(#ringNeon);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.ring-center strong {
+  font-family: "Clash Display", sans-serif;
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1;
+  background: linear-gradient(135deg, #fff, var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.ring-center span {
+  color: var(--text-3);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+/* ── MACRO PILLS ─────────────────────────────────────────── */
+.macro-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.macro-pill-row.stacked {
+  justify-content: flex-start;
+}
+
+.pill {
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+  border-radius: inherit;
+}
+
+.pill.protein {
+  background: rgba(96, 165, 250, 0.18);
+  border: 1px solid rgba(96, 165, 250, 0.4);
+  color: #93c5fd;
+}
+
+.pill.carbs {
+  background: rgba(251, 146, 60, 0.18);
+  border: 1px solid rgba(251, 146, 60, 0.4);
+  color: #fdba74;
+}
+
+.pill.fats {
+  background: rgba(251, 191, 36, 0.18);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  color: #fde68a;
+}
+
+/* ── SCAN PAGE ───────────────────────────────────────────── */
+.scan-page-card {
+  text-align: center;
+  min-height: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.scan-page-card .muted {
+  margin-bottom: 8px;
+}
+
+.camera-button-wrap {
+  display: inline-grid;
+  place-items: center;
+  position: relative;
+  margin: 12px 0;
+  cursor: pointer;
+}
+
+.camera-button-wrap input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.camera-button-wrap::before,
+.camera-button-wrap::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(124, 92, 252, 0.3);
+  animation: pulse-ring 2.4s ease-out infinite;
+}
+
+.camera-button-wrap::before {
+  width: 160px; height: 160px;
+}
+
+.camera-button-wrap::after {
+  width: 196px; height: 196px;
+  animation-delay: 0.6s;
+  border-color: rgba(34, 211, 238, 0.2);
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(0.9); opacity: 0.8; }
+  70%  { transform: scale(1.1); opacity: 0; }
+  100% { transform: scale(1.1); opacity: 0; }
+}
+
+.camera-button {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #2d1f6e, #1a1040);
+  border: 1px solid rgba(124, 92, 252, 0.6);
+  box-shadow:
+    0 0 0 1px rgba(124, 92, 252, 0.2),
+    0 0 40px rgba(124, 92, 252, 0.5),
+    0 0 80px rgba(34, 211, 238, 0.2),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+  display: grid;
+  place-items: center;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.camera-button:active {
+  transform: scale(0.95);
+  box-shadow:
+    0 0 20px rgba(124, 92, 252, 0.8),
+    0 0 60px rgba(34, 211, 238, 0.3);
+}
+
+.camera-button svg {
+  width: 52px;
+  height: 52px;
+  color: #e0d8ff;
+  filter: drop-shadow(0 0 8px rgba(124, 92, 252, 0.8));
+}
+
+/* ── CIRCULAR SCAN PREVIEW ───────────────────────────────── */
+.scan-circle-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 1.2rem 0 0.5rem;
+}
+
+.scan-circle-ring-area {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  isolation: isolate;
+}
+
+.scan-circle-img-wrap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2.5px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 0 24px rgba(124, 92, 252, 0.35);
+  z-index: 2;
+}
+
+.scan-circle-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.scan-circle-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.42);
+  border-radius: 50%;
+}
+
+.scan-ring {
+  position: absolute;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.scan-ring-spin {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: inherit;
+}
+
+.scan-ring-outer {
+  width: 154px;
+  height: 154px;
+  border: 2.5px dashed rgba(124, 92, 252, 0.8);
+}
+
+.scan-ring-inner {
+  width: 130px;
+  height: 130px;
+  border: 2px dashed rgba(34, 211, 238, 0.65);
+}
+
+.scan-ring-success {
+  width: 154px;
+  height: 154px;
+  border: 2.5px solid var(--green);
+  box-shadow: 0 0 18px rgba(52, 211, 153, 0.5), 0 0 40px rgba(52, 211, 153, 0.2);
+}
+
+.scan-circle-label {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--cyan);
+  min-height: 18px;
+}
+
+/* ── DETECTED KCAL ───────────────────────────────────────── */
+.detect-kcal {
+  color: var(--cyan);
+  font-family: "Clash Display", sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 4px 0 10px;
+}
+
+/* ── SCAN RESULT (home card) ─────────────────────────────── */
+.scan-result {
+  margin-top: 8px;
+  text-align: left;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: rgba(124, 92, 252, 0.08);
+  border: 1px solid rgba(124, 92, 252, 0.2);
+}
+
+.scan-result h4 {
+  font-size: 1.05rem;
+  margin-bottom: 4px;
+}
+
+.scan-result p {
+  color: var(--cyan);
+  font-size: 1.4rem;
+  font-family: "Clash Display", sans-serif;
+  font-weight: 700;
+}
+
+/* ── CARD HEADER INLINE ──────────────────────────────────── */
+.card-header-inline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.card-header-inline h3 {
+  font-size: 1.05rem;
+}
+
+/* ── MEAL LIST ───────────────────────────────────────────── */
+.list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.meal-item {
+  padding: 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  transition: border-color 0.2s;
+}
+
+.meal-item:hover {
+  border-color: rgba(124, 92, 252, 0.3);
+}
+
+.meal-item h4 {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 3px;
+}
+
+.meal-item p {
+  color: var(--text-3);
+  font-size: 0.82rem;
+}
+
+/* ── EDIT GRID ───────────────────────────────────────────── */
+.edit-grid {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── GOAL ROW ────────────────────────────────────────────── */
+.goal-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+}
+
+/* ── INPUTS ──────────────────────────────────────────────── */
+input {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-1);
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.95rem;
+  padding: 11px 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input::placeholder {
+  color: var(--text-3);
+}
+
+input:focus {
+  outline: none;
+  border-color: rgba(124, 92, 252, 0.6);
+  box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.15);
+}
+
+/* ── BUTTONS ─────────────────────────────────────────────── */
+.mini-btn {
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s;
+  background: linear-gradient(135deg, var(--violet), #5b8af5);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(124, 92, 252, 0.4);
+}
+
+.mini-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(124, 92, 252, 0.55);
+}
+
+.mini-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.mini-btn.danger {
+  background: linear-gradient(135deg, #be185d, #e11d48);
+  box-shadow: 0 4px 16px rgba(225, 29, 72, 0.35);
+}
+
+.mini-btn.danger:hover {
+  box-shadow: 0 6px 20px rgba(225, 29, 72, 0.5);
+}
+
+/* ── ERROR BANNER ────────────────────────────────────────── */
+.error-banner {
+  margin: 10px 0;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(225, 29, 72, 0.12);
+  border: 1px solid rgba(225, 29, 72, 0.35);
+  font-size: 0.88rem;
+  color: #fda4af;
+  flex-shrink: 0;
+}
+
+/* ── MUTED TEXT ──────────────────────────────────────────── */
+.muted, .qty-text {
+  color: var(--text-2);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+/* ── BOTTOM NAV ──────────────────────────────────────────── */
+.bottom-nav {
+  /* ✅ fixed positioning keeps it always visible regardless of scroll */
+  position: fixed;
+  bottom: calc(12px + env(safe-area-inset-bottom)); /* ✅ iPhone home bar safe area */
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(calc(100% - 24px), 398px);
+  height: var(--nav-height);
+  background: rgba(12, 9, 24, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 6px;
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+  /* ✅ High z-index so it always floats above content */
+  z-index: 1000;
+}
+
+.nav-btn {
+  border: none;
+  border-radius: 18px;
+  background: transparent;
+  color: var(--text-3);
+  padding: 9px 4px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+  /* ✅ Prevent tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-btn svg {
+  width: 21px;
+  height: 21px;
+  transition: transform 0.2s;
+}
+
+.nav-btn.active {
+  color: var(--text-1);
+  background: linear-gradient(135deg, rgba(124, 92, 252, 0.28), rgba(34, 211, 238, 0.15));
+}
+
+.nav-btn.active svg {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 6px rgba(124, 92, 252, 0.7));
+}
+
+/* ── SKELETON ────────────────────────────────────────────── */
+.skeleton {
+  min-height: 130px;
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── LATEST SCAN PREVIEW ─────────────────────────────────── */
+.scan-result-preview {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(124, 92, 252, 0.08), rgba(34, 211, 238, 0.05));
+  border: 1px solid rgba(124, 92, 252, 0.2);
+}
+
+.scan-result-preview h4 {
+  font-size: 1rem;
+  margin-bottom: 2px;
+}
+
+.scan-result-preview p {
+  color: var(--cyan);
+  font-family: "Clash Display", sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+/* ── SCROLLBAR ───────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(124, 92, 252, 0.3); border-radius: 999px; }

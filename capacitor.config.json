@@ -1,0 +1,11 @@
+{
+  "appId": "com.example.app",
+  "appName": "Nutri-Scan",
+  "webDir": "frontend/dist",
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": false,
+      "providers": ["google.com"]
+    }
+  }
+}
